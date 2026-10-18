@@ -478,6 +478,476 @@ namespace GDIPayloads
 
 		return 0;
 	}
+
+	DWORD WINAPI GDIShader8(LPVOID lpParam) // coded by Danoni631
+	{
+		HDC hdc = GetDC(0);
+		HDC dcCopy = CreateCompatibleDC(hdc);
+
+		BITMAPINFO bmi = { 0 };
+		bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bmi.bmiHeader.biWidth = w;
+		bmi.bmiHeader.biHeight = -h;
+		bmi.bmiHeader.biPlanes = 1;
+		bmi.bmiHeader.biBitCount = 32;
+		bmi.bmiHeader.biCompression = BI_RGB;
+
+		PRGBQUAD_t rgbScreen = NULL;
+		HBITMAP hbmTemp = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, (void**)&rgbScreen, NULL, 0);
+		SelectObject(dcCopy, hbmTemp);
+
+		int t = 0;
+
+		while (true)
+		{
+			hdc = GetDC(0);
+
+			int offsetX = (int)(sinf(t * 0.05f) * 4.0f);
+			int offsetY = (int)(cosf(t * 0.04f) * 4.0f);
+
+			StretchBlt(dcCopy, offsetX - 2, offsetY - 2, w + 4, h + 4, hdc, 0, 0, w, h, SRCCOPY);
+
+			int totalPixels = w * h;
+
+			for (int i = 0; i < totalPixels; i++)
+			{
+				RGBQUAD_t pixel = rgbScreen[i];
+
+				pixel.colors.r = (BYTE)(pixel.colors.r * 0.92f);
+				pixel.colors.g = (BYTE)(pixel.colors.g * 0.92f);
+				pixel.colors.b = (BYTE)(pixel.colors.b * 0.92f);
+
+				int colorShift = (int)(sinf(t * 0.1f) * 30.0f);
+				pixel.colors.r = (BYTE)((pixel.colors.r + colorShift) % 255);
+				pixel.colors.g = (BYTE)((pixel.colors.g + (t % 15)) % 255);
+				pixel.colors.b = (BYTE)((pixel.colors.b + ((t % 15) + (colorShift) % 255)));
+
+				rgbScreen[i] = pixel;
+			}
+
+			BitBlt(hdc, 0, 0, w, h, dcCopy, 0, 0, SRCCOPY);
+
+			ReleaseDC(NULL, hdc);
+
+			t++;
+			Sleep(15);
+		}
+
+		DeleteObject(hbmTemp);
+		DeleteDC(dcCopy);
+
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader9(LPVOID lpParam)
+	{
+		HDC hdc = GetDC(0);
+		HDC dcCopy = CreateCompatibleDC(hdc);
+
+		BITMAPINFO bmi = { 0 };
+		bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bmi.bmiHeader.biWidth = w;
+		bmi.bmiHeader.biHeight = -h;
+		bmi.bmiHeader.biPlanes = 1;
+		bmi.bmiHeader.biBitCount = 32;
+		bmi.bmiHeader.biCompression = BI_RGB;
+
+		PRGBQUAD_t rgbScreen = NULL;
+		HBITMAP hbmTemp = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, (void**)&rgbScreen, NULL, NULL);
+		SelectObject(dcCopy, hbmTemp);
+
+		int t = 0;
+
+		while (true)
+		{
+			hdc = GetDC(0);
+
+			BitBlt(dcCopy, 0, 0, w, h, hdc, 0, 0, SRCINVERT);
+
+			int totalPixels = w * h;
+			
+			for (int i = 0; i < totalPixels; i++)
+			{
+				RGBQUAD_t pixel = rgbScreen[i];
+				pixel.colors.r = (BYTE)(pixel.colors.r * 0.95f);
+				pixel.colors.g = (BYTE)(pixel.colors.g * 0.95f);
+				pixel.colors.b = (BYTE)(pixel.colors.b * 0.95f);
+				rgbScreen[i] = pixel;
+			}
+
+			BitBlt(hdc, 0, 0, w, h, dcCopy, 0, 0, SRCINVERT);
+
+			COLORREF polyColor = RGB
+			(
+				(BYTE)(sinf(t * 0.05f) * 127 + 128),
+				(BYTE)(cosf(t * 0.07f) * 127 + 128),
+				(BYTE)(sinf(t * 0.03f) * 127 + 128)
+			);
+
+			HBRUSH hBrush = CreateSolidBrush(polyColor);
+			HPEN hPen = CreatePen(PS_SOLID, 3, RGB(255, 255, 255));
+			HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+			HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+
+			for (int p = 0; p < 4; p++)
+			{
+				float centerX = (float)(w / 2) + sinf((t * 0.04f) + p) * (w * 0.35f);
+				float centerY = (float)(h / 2) + cosf((t * 0.03f) + p) * (h * 0.35f);
+				float radius = 80.0f + (p * 30.0f);
+
+				POINT pts[4];
+				int sides = 3 + (p % 3);
+
+				for (int s = 0; s < sides; s++)
+				{
+					float angle = (s * 6.2831853f / sides) + (t * 0.02f);
+					pts[s].x = (LONG)(centerX + cosf(angle) * radius);
+					pts[s].y = (LONG)(centerY + sinf(angle) * radius);
+				}
+
+				Polygon(hdc, pts, sides);
+			}
+
+			SelectObject(hdc, hOldBrush);
+			SelectObject(hdc, hOldPen);
+			DeleteObject(hBrush);
+			DeleteObject(hPen);
+
+			ReleaseDC(NULL, hdc);
+
+			t++;
+			Sleep(15);
+		}
+
+		DeleteObject(hbmTemp);
+		DeleteDC(dcCopy);
+
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader10(LPVOID lpParam) // coded by Danoni631
+	{
+		HDC hdc = GetDC(0);
+		HDC dcCopy = CreateCompatibleDC(hdc);
+
+		BITMAPINFO bmi = { 0 };
+		bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bmi.bmiHeader.biWidth = w;
+		bmi.bmiHeader.biHeight = -h;
+		bmi.bmiHeader.biPlanes = 1;
+		bmi.bmiHeader.biBitCount = 32;
+		bmi.bmiHeader.biCompression = BI_RGB;
+
+		PRGBQUAD_t rgbScreen = NULL;
+		HBITMAP hbmTemp = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, (void**)&rgbScreen, NULL, NULL);
+		SelectObject(dcCopy, hbmTemp);
+
+		int t = 0;
+
+		while (true)
+		{
+			hdc = GetDC(0);
+
+			BitBlt(dcCopy, 0, 0, w, h, hdc, 0, 0, SRCCOPY);
+
+			int totalPixels = w * h;
+
+			for (int y = 0; y < h; y++)
+			{
+				for (int x = 0; x < w; x++)
+				{
+					int index = y * w + x;
+					RGBQUAD_t pixel = rgbScreen[index];
+
+					BYTE xorKey = (BYTE)((x ^ y ^ t) & 0xFF);
+
+					pixel.colors.r ^= xorKey;
+					pixel.colors.g ^= (BYTE)(xorKey ^ (t & 0x3F));
+					pixel.colors.b ^= (BYTE)(x ^ t);
+
+					rgbScreen[index] = pixel;
+				}
+			}
+
+			int shakeX = (rand() % 25) - 12;
+			int shakeY = (rand() % 25) - 12;
+
+			BitBlt(hdc, shakeX, shakeY, w, h, dcCopy, 0, 0, SRCCOPY);
+
+			ReleaseDC(NULL, hdc);
+
+			t++;
+			Sleep(10);
+		}
+
+		DeleteObject(hbmTemp);
+		DeleteDC(dcCopy);
+
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader11(LPVOID lpParam) // coded by Danoni631, stretch by UltraDasher965
+	{
+		HDC hdc = GetDC(0);
+		HDC dcCopy = CreateCompatibleDC(hdc);
+
+		BITMAPINFO bmi = { 0 };
+		bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bmi.bmiHeader.biWidth = w;
+		bmi.bmiHeader.biHeight = -h;
+		bmi.bmiHeader.biPlanes = 1;
+		bmi.bmiHeader.biBitCount = 32;
+		bmi.bmiHeader.biCompression = BI_RGB;
+
+		PRGBQUAD_t rgbScreen = NULL;
+		HBITMAP hbmTemp = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, (void**)&rgbScreen, NULL, NULL);
+		SelectObject(dcCopy, hbmTemp);
+
+		float radius = 1.0f;
+		double angle = 0.0;
+		int t = 0;
+
+		while (true)
+		{
+			hdc = GetDC(0);
+
+			BitBlt(dcCopy, 0, 0, w, h, hdc, 0, 0, SRCCOPY);
+
+			int totalPixels = w * h;
+
+			for (int i = 0; i < totalPixels; i++)
+			{
+				RGBQUAD_t pixel = rgbScreen[i];
+
+				pixel.colors.r = (BYTE)((pixel.colors.r + t) % 255);
+				pixel.colors.g = (BYTE)((pixel.colors.g + (t / 2)) % 255);
+				pixel.colors.b = (BYTE)((pixel.colors.b + (t * 2)) % 255);
+
+				rgbScreen[i] = pixel;
+			}
+
+			BitBlt(dcCopy, 0, 0, w, h, dcCopy, 0, 0, SRCCOPY);
+
+			float x = (float)(cos(angle) * (radius * 0.2f));
+			float y = (float)(sin(angle) * (radius * 0.2f));
+
+			StretchBlt(hdc, 0, 0, w, h, dcCopy, 0, 0, w, h, SRCCOPY);
+			StretchBlt(hdc, (int)x, (int)y, w - (int)(x * 2), h - (int)(y * 2), hdc, 0, 0, w, h, SRCCOPY);
+			StretchBlt(hdc, (int)x, (int)y, w - (int)(x * 2), h - (int)(y * 2), hdc, 0, 0, w, h, SRCPAINT);
+
+			radius += 0.1f;
+			if (radius > 200.0f) radius = 1.0f;
+
+			angle = fmod(angle + (PI / radius), PI * 2.0) / 1.001;
+
+			ReleaseDC(0, hdc);
+
+			t++;
+			Sleep(15);
+		}
+
+		DeleteObject(hbmTemp);
+		DeleteDC(dcCopy);
+
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader12(LPVOID lpParam)
+	{
+		HDC hdc = GetDC(0);
+		HDC dcCopy = CreateCompatibleDC(hdc);
+
+		BITMAPINFO bmpi = { 0 };
+		HBITMAP bmp;
+
+		bmpi.bmiHeader.biSize = sizeof(bmpi);
+		bmpi.bmiHeader.biWidth = w;
+		bmpi.bmiHeader.biHeight = h;
+		bmpi.bmiHeader.biPlanes = 1;
+		bmpi.bmiHeader.biBitCount = 32;
+		bmpi.bmiHeader.biCompression = BI_RGB;
+
+
+		PRGBQUAD_t rgbquad = NULL;
+		HSL hslcolor;
+
+		bmp = CreateDIBSection(hdc, &bmpi, DIB_RGB_COLORS, (void**)&rgbquad, NULL, 0);
+		SelectObject(dcCopy, bmp);
+
+		INT i = 0;
+
+		while (1)
+		{
+			hdc = GetDC(NULL);
+			StretchBlt(dcCopy, 0, 0, w, h, hdc, 0, 0, w, h, SRCCOPY);
+
+			RGBQUAD_t rgbquadCopy;
+
+			for (int x = 0; x < w; x++)
+			{
+				for (int y = 0; y < h; y++)
+				{
+					int index = y * w + x;
+
+					int cx = x - (w / 2);
+					int cy = y - (h / 2);
+
+					int fx = i * (cbrt((x & y) + (cx & cy)));
+
+					rgbquadCopy = rgbquad[index];
+
+					hslcolor = RGBtoHSL(rgbquadCopy);
+					hslcolor.h = fmod(fx / 400.f + y / h * .2f, 1.f);
+					rgbquad[index] = HSLtoRGB(hslcolor);
+				}
+			}
+
+			i++;
+
+			StretchBlt(hdc, 0, 0, w, h, dcCopy, 0, 0, w, h, SRCCOPY);
+			ReleaseDC(NULL, hdc);
+			DeleteDC(hdc);
+		}
+
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader13(LPVOID lpParam) // coded by Nazar
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader14(LPVOID lpParam) // coded by UltraDasher
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader15(LPVOID lpParam) // coded by Nazar
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader16(LPVOID lpParam) // coded by Nazar
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader17(LPVOID lpParam) // coded by CrzxyMinty
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader18(LPVOID lpParam) // coded by X0ranix
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader19(LPVOID lpParam) // coded by Nyexev
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader20(LPVOID lpParam) // coded by UltraDasher965
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader21(LPVOID lpParam) // coded by UltraDasher965
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader22(LPVOID lpParam) // coded by Nyexev
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader23(LPVOID lpParam) // coded by Nazar
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader24(LPVOID lpParam) // coded by Nazar
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader25(LPVOID lpParam) // coded by UltraDasher965
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader26(LPVOID lpParam) // coded by Nyexev
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader27(LPVOID lpParam) // coded by Nazar
+	{
+		return 0;
+	}
+
+	DWORD WINAPI GDIShader28(LPVOID lpParam) // coded by Danoni631
+	{
+		HDC hdc = GetDC(0);
+		HDC dcCopy = CreateCompatibleDC(hdc);
+
+		BITMAPINFO bmi = { 0 };
+		bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bmi.bmiHeader.biWidth = w;
+		bmi.bmiHeader.biHeight = -h;
+		bmi.bmiHeader.biPlanes = 1;
+		bmi.bmiHeader.biBitCount = 32;
+		bmi.bmiHeader.biCompression = BI_RGB;
+
+		PRGBQUAD_t rgbScreen = NULL;
+		HBITMAP hbmTemp = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, (void**)&rgbScreen, NULL, NULL);
+		SelectObject(dcCopy, hbmTemp);
+
+		int t = 0;
+
+		while (true)
+		{
+			hdc = GetDC(0);
+			BitBlt(dcCopy, 0, 0, w, h, hdc, 0, 0, SRCCOPY);
+
+			int totalPixels = w * h;
+
+			for (int i = 0; i < totalPixels; i++)
+			{
+				RGBQUAD_t pixel = rgbScreen[i];
+
+				int wave = (int)(sinf(t * 0.05f + (i % w) * 0.01f) * 35.0f);
+
+				pixel.colors.r = (BYTE)((pixel.colors.r + wave + t) % 255);
+				pixel.colors.g = (BYTE)((pixel.colors.g - wave + (t / 2)) % 255);
+				pixel.colors.b = (BYTE)((pixel.colors.b + (t * 2)) % 255);
+
+				rgbScreen[i] = pixel;
+			}
+
+			float pulseFactor = sinf(t * 0.07f) * 0.04f;
+			int pWidth = (int)(w * (1.0f + pulseFactor));
+			int pHeight = (int)(h * (1.0f + pulseFactor));
+			int pX = (w - pWidth) / 2;
+			int pY = (h - pHeight) / 2;
+
+			PatBlt(hdc, 0, 0, w, h, BLACKNESS);
+
+			StretchBlt(hdc, pX, pY, pWidth, pHeight, dcCopy, 0, 0, w, h, SRCCOPY);
+
+			ReleaseDC(0, hdc);
+
+			t++;
+			Sleep(15);
+		}
+
+		// Cleanup de segurança
+		DeleteObject(hbmTemp);
+		DeleteDC(dcCopy);
+
+		return 0;
+	}
 }
 
 namespace WhileGDI
@@ -529,7 +999,97 @@ namespace WhileGDI
 		}
 	}
 
-	DWORD WINAPI Pens(LPVOID lpParam)
+	DWORD WINAPI Pens(LPVOID lpParam) // coded by Danoni631
 	{
+		int x = 10;
+		int y = 10;
+
+		int incrementor = 10;
+
+		int signX = -1;
+		int signY = -1;
+
+		int r = 255;
+		int g = 0;
+		int b = 0;
+		int state = 0;
+
+		while (1)
+		{
+
+			if (state == 0)
+			{
+				g += 5; if (g >= 255) state = 1;
+			}
+
+			else if (state == 1)
+			{
+				r -= 5; if (r <= 0) state = 2;
+			}
+
+			else if (state == 2)
+			{
+				b += 5; if (b >= 255) state = 3;
+			}
+
+			else if (state == 3)
+			{
+				g -= 5; if (g <= 0) state = 4;
+			}
+
+			else if (state == 4)
+			{
+				r += 5; if (r >= 255) state = 5;
+			}
+
+			else if (state == 5)
+			{
+				b -= 5; if (b <= 0) state = 0;
+			}
+
+
+			HDC hdc = GetDC(0);
+
+			x += incrementor * signX;
+			y += incrementor * signY;
+
+
+			if (y >= h)
+			{
+				signY = -1;
+			}
+
+			if (x >= w)
+			{
+				signX = -1;
+			}
+
+			if (y == 0)
+			{
+				signY = 1;
+			}
+
+			if (x == 0)
+			{
+				signX = 1;
+			}
+
+
+			POINT p[3] =
+			{
+				rand() % 255 + x, rand() % 25 + y,
+				fabs(35 + x), rand() % 25 + y,
+				rand() % 235 + x, rand() % 525 + y,
+			};
+
+			COLORREF randomcolor = RGB(r, g, b);
+
+			HPEN hPen = CreatePen(PS_GEOMETRIC, 5, randomcolor);
+			SelectObject(hdc, hPen);
+			Polyline(hdc, p, 3);
+			DeleteObject(hPen);
+			Sleep(1);
+			ReleaseDC(0, hdc);
+		}
 	}
 }
